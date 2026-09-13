@@ -1,51 +1,46 @@
 # AgroTrace
 
-Sistema web para la gestión de acopio y trazabilidad de materia prima agrícola, desarrollado con Django, Django ORM y SQLite como parte del laboratorio GLAB-S03 (Desarrollo de Aplicaciones Empresariales).
+Sistema web para la gestión de acopio y trazabilidad de materia prima agrícola, desarrollado con Django, Django ORM y SQLite. Proyecto iniciado en el laboratorio GLAB-S03 (persistencia con Models, migraciones y ORM) y ampliado en el laboratorio GLAB-S04 (relaciones OneToOneField, ForeignKey y ManyToManyField con modelo intermedio).
 
 ## Problemática
 
-En el sector agroexportador peruano, específicamente en la cadena de suministro de productos como la palta y el mango, muchas empresas procesadoras adquieren materia prima de diversos fundos y pequeños productores rurales utilizando registros físicos o planillas desarticuladas. Esta falta de centralización dificulta garantizar el origen exacto de los productos exigido por los mercados internacionales, genera demoras al evaluar los porcentajes de descarte por calidad y complica la liquidación de pagos a los agricultores.
+En el sector agroexportador peruano, muchas empresas procesadoras adquieren materia prima de diversos fundos y pequeños productores rurales utilizando registros físicos o planillas desarticuladas. Esta falta de centralización dificulta garantizar el origen exacto de los productos exigido por los mercados internacionales, genera demoras al evaluar la calidad y los porcentajes de descarte, y complica la verificación de certificaciones agrícolas vigentes por lote.
 
-**AgroTrace** digitaliza la recepción de cosechas y el control de calidad desde el campo hasta el almacén, permitiendo:
-
-- Registrar los fundos productores de origen y su condición para exportación.
-- Registrar cada lote de materia prima recibido, vinculado obligatoriamente a su fundo de origen.
-- Consultar, actualizar y eliminar esta información de manera centralizada y persistente.
-
-## Usuarios involucrados
-
-- **Auditor de calidad / Ingeniero de campo:** inspecciona los predios y verifica las certificaciones agrícolas.
-- **Jefe de centro de acopio:** realiza el pesaje en balanza, el registro de lotes y la evaluación de merma.
-- **Administrador de la agroexportadora:** supervisa el volumen consolidado, aprueba el estado de cada lote y gestiona las liquidaciones comerciales.
-
-## Requisitos funcionales principales
-
-- RF-01 / RF-02: Registrar y listar centros de acopio.
-- RF-03 / RF-04: Registrar variedades de cultivo y consultar certificaciones agrícolas.
-- RF-05 / RF-06: Registrar y listar fundos productores, filtrando por condición de exportación.
-- RF-07 / RF-08: Actualizar y eliminar fundos productores.
-- RF-09 / RF-10: Registrar y listar lotes recepcionados, vinculados a su fundo de origen.
-- RF-11 / RF-12: Actualizar el estado de evaluación de un lote y eliminar registros duplicados o erróneos.
+**AgroTrace** digitaliza la recepción de cosechas, el control de calidad y la trazabilidad de certificaciones desde el campo hasta el almacén.
 
 ## Modelo de datos
 
-El sistema define 5 entidades:
+El sistema cuenta con **7 entidades**:
 
 **Entidades independientes**
 - `CentroAcopio`
 - `VariedadCultivo`
 - `CertificacionAgricola`
 
-**Entidades relacionadas (ForeignKey)**
-- `FundoProductor` (padre)
-- `LoteRecepcionado` (hija, vinculada a `FundoProductor` mediante `fundo_id`)
+**Entidades relacionadas**
+- `FundoProductor` — origen de la materia prima.
+- `LoteRecepcionado` — cada entrega física recibida, vinculada a su fundo de origen.
+- `EvaluacionCalidadLote` — ficha complementaria de control de calidad de un lote.
+- `CertificacionLote` — modelo intermedio que registra la auditoría de una certificación sobre un lote específico.
 
-Un fundo agrícola puede entregar múltiples lotes de materia prima a lo largo de una campaña (relación 1:N), garantizando la trazabilidad completa desde la planta hasta el predio de origen.
+### Relaciones implementadas
+
+| Tipo | Entidades | Campo | related_name | on_delete |
+|---|---|---|---|---|
+| 1:N (ForeignKey) | FundoProductor → LoteRecepcionado | `fundo` | `lotes` | CASCADE |
+| 1:1 (OneToOneField) | LoteRecepcionado → EvaluacionCalidadLote | `lote` | `evaluacion_calidad` | CASCADE |
+| N:M (ManyToManyField + through) | LoteRecepcionado ↔ CertificacionAgricola, vía CertificacionLote | `certificaciones` | `lotes` | CASCADE (en ambas FK del intermedio) |
+
+**Justificación de negocio:**
+
+- **1:N** — Un fundo agrícola entrega su cosecha en múltiples camiones a lo largo de la temporada, generando muchos lotes distintos que deben rastrearse hasta su origen para efectos de pago y auditoría.
+- **1:1** — La evaluación de calidad (grados Brix, firmeza del fruto) la realiza el área de control de calidad en un momento posterior y opcional respecto al ingreso del lote, por lo que se modela como una ficha complementaria y no como campos adicionales del lote.
+- **N:M** — Un mismo lote puede cumplir varias normas de calidad exigidas por distintos mercados de destino, y cada auditoría de una certificación sobre un lote específico tiene su propia fecha y código de inspección, información que solo tiene sentido en el cruce de ambas entidades — de ahí el modelo intermedio `CertificacionLote`.
 
 ## Tecnologías utilizadas
 
 - Python 3.10+
-- Django 5
+- Django 5 / 6
 - Django ORM
 - SQLite
 - Bootstrap 5 (interfaz web)
@@ -55,16 +50,15 @@ Un fundo agrícola puede entregar múltiples lotes de materia prima a lo largo d
 CRUD completo (Crear, Leer, Actualizar, Eliminar) mediante Django ORM para:
 
 - **Fundos Productores** (`/agrotrace/fundos/`)
-- **Lotes Recepcionados** (`/agrotrace/lotes/`)
-
-Cada operación reemplaza el manejo de datos en memoria por persistencia real en SQLite, utilizando `Model.objects.all()`, `.create()`, `.get_object_or_404()` y `.delete()` según corresponda.
+- **Lotes Recepcionados** (`/agrotrace/lotes/`), con visualización de datos relacionados (fundo, evaluación de calidad y certificaciones) mediante `select_related()` y `prefetch_related()`.
+- **Certificaciones de Lote** (`/agrotrace/certificaciones-lote/`) — CRUD del modelo intermedio de la relación N:M, permitiendo asignar, editar y eliminar la auditoría de una certificación sobre un lote junto con sus atributos propios (`fecha_auditoria`, `codigo_inspeccion`).
 
 ## Instalación y ejecución
 
 ```bash
 # Clonar el repositorio
 git clone <url-del-repositorio>
-cd lab03-agrotrace-project
+cd Agrotrace-Lab04
 
 # Crear y activar entorno virtual
 python -m venv venv
@@ -75,7 +69,6 @@ source venv/bin/activate   # Linux/Mac
 pip install -r requirements.txt
 
 # Aplicar migraciones
-python manage.py makemigrations
 python manage.py migrate
 
 # Crear superusuario (opcional, para acceder al admin)
@@ -88,6 +81,7 @@ python manage.py runserver
 Luego abrir en el navegador:
 - `http://127.0.0.1:8000/agrotrace/fundos/`
 - `http://127.0.0.1:8000/agrotrace/lotes/`
+- `http://127.0.0.1:8000/agrotrace/certificaciones-lote/`
 - `http://127.0.0.1:8000/admin/` (panel de administración)
 
 ## Autor
