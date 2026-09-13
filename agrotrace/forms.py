@@ -1,5 +1,6 @@
 from django import forms
 from .models import FundoProductor, LoteRecepcionado
+from .models import FundoProductor, LoteRecepcionado, CertificacionLote
 
 class FundoProductorForm(forms.ModelForm):
     class Meta:
@@ -22,4 +23,15 @@ class LoteRecepcionadoForm(forms.ModelForm):
             'toneladas_brutas': forms.NumberInput(attrs={'class': 'form-control'}),
             'porcentaje_descarte': forms.NumberInput(attrs={'class': 'form-control'}),
             'estado_evaluacion': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class CertificacionLoteForm(forms.ModelForm):
+    class Meta:
+        model = CertificacionLote
+        fields = ['lote', 'certificacion', 'fecha_auditoria', 'codigo_inspeccion']
+        widgets = {
+            'lote': forms.Select(attrs={'class': 'form-select'}),
+            'certificacion': forms.Select(attrs={'class': 'form-select'}),
+            'fecha_auditoria': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'codigo_inspeccion': forms.TextInput(attrs={'class': 'form-control'}),
         }

@@ -26,14 +26,14 @@
         <tr>
             <td>{{ lote.id }}</td>
             <td>{{ lote.codigo_lote }}</td>
-            
+
             <!-- Acceso Directo (1:N) -->
             <td>{{ lote.fundo.nombre_fundo }}</td>
 
-            <!-- Acceso Directo Inverso (1:1 a EvaluacionCalidadLote) -->
+            <!-- Acceso Directo vía related_name (1:1 a EvaluacionCalidadLote) -->
             <td>
-                {% if lote.evaluacioncalidadlote %}
-                    Brix: {{ lote.evaluacioncalidadlote.nivel_brix }}° | pH: {{ lote.evaluacioncalidadlote.ph }}
+                {% if lote.evaluacion_calidad %}
+                    Brix: {{ lote.evaluacion_calidad.nivel_brix }}° | Firmeza: {{ lote.evaluacion_calidad.firmeza_fruto }}
                 {% else %}
                     <span class="text-muted">Sin evaluación</span>
                 {% endif %}

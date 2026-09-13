@@ -1,0 +1,18 @@
+{% extends 'agrotrace/base.html' %}
+{% block content %}
+<div class="card shadow-sm col-md-6 mx-auto">
+    <div class="card-header bg-success text-white">
+        <h4 class="mb-0">{{ title }}</h4>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-flex justify-content-between mt-3">
+                <a href="{% url 'agrotrace:certificacionlote_list' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

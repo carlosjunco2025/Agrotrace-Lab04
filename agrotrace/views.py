@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import FundoProductor, LoteRecepcionado
 from .forms import FundoProductorForm, LoteRecepcionadoForm
+from .models import FundoProductor, LoteRecepcionado, CertificacionLote
+from .forms import FundoProductorForm, LoteRecepcionadoForm, CertificacionLoteForm
 
 # Vistas de FundoProductor
 def fundo_list(request):
@@ -37,11 +39,11 @@ def fundo_delete(request, pk):
 
 # Vistas de LoteRecepcionado
 def lote_list(request):
-    # Ejercicio 6: Optimización de consultas ORM
+    # Optimización de consultas ORM
     # select_related para relaciones 1:1 y 1:N (JOIN en SQL)
     # prefetch_related para relaciones N:M (consulta separada + join en memoria)
     lotes = LoteRecepcionado.objects.select_related(
-        'fundo', 
+        'fundo',
         'evaluacion_calidad'
     ).prefetch_related(
         'certificaciones'
@@ -75,3 +77,35 @@ def lote_delete(request, pk):
         lote.delete()
         return redirect('agrotrace:lote_list')
     return render(request, 'agrotrace/lote_confirm_delete.html', {'object': lote, 'type': 'Lote'})
+
+def certificacionlote_list(request):
+    asignaciones = CertificacionLote.objects.select_related('lote', 'certificacion').all()
+    return render(request, 'agrotrace/certificacionlote_list.html', {'asignaciones': asignaciones})
+
+def certificacionlote_create(request):
+    if request.method == 'POST':
+        form = CertificacionLoteForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('agrotrace:certificacionlote_list')
+    else:
+        form = CertificacionLoteForm()
+    return render(request, 'agrotrace/certificacionlote_form.html', {'form': form, 'title': 'Nueva Certificación de Lote'})
+
+def certificacionlote_update(request, pk):
+    asignacion = get_object_or_404(CertificacionLote, pk=pk)
+    if request.method == 'POST':
+        form = CertificacionLoteForm(request.POST, instance=asignacion)
+        if form.is_valid():
+            form.save()
+            return redirect('agrotrace:certificacionlote_list')
+    else:
+        form = CertificacionLoteForm(instance=asignacion)
+    return render(request, 'agrotrace/certificacionlote_form.html', {'form': form, 'title': 'Editar Certificación de Lote'})
+
+def certificacionlote_delete(request, pk):
+    asignacion = get_object_or_404(CertificacionLote, pk=pk)
+    if request.method == 'POST':
+        asignacion.delete()
+        return redirect('agrotrace:certificacionlote_list')
+    return render(request, 'agrotrace/certificacionlote_confirm_delete.html', {'object': asignacion, 'type': 'Certificación de Lote'})

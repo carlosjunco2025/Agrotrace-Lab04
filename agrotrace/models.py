@@ -1,11 +1,13 @@
 from django.db import models
 
+
 class CentroAcopio(models.Model):
     nombre = models.CharField(max_length=100)
     ubicacion = models.CharField(max_length=150)
 
     def __str__(self):
         return self.nombre
+
 
 class VariedadCultivo(models.Model):
     nombre_cultivo = models.CharField(max_length=100)
@@ -14,12 +16,14 @@ class VariedadCultivo(models.Model):
     def __str__(self):
         return self.nombre_cultivo
 
+
 class CertificacionAgricola(models.Model):
     nombre_certificacion = models.CharField(max_length=100)
     entidad_emisora = models.CharField(max_length=100)
 
     def __str__(self):
         return self.nombre_certificacion
+
 
 class FundoProductor(models.Model):
     nombre_fundo = models.CharField(max_length=100)
@@ -30,11 +34,12 @@ class FundoProductor(models.Model):
     def __str__(self):
         return self.nombre_fundo
 
+
 class LoteRecepcionado(models.Model):
     # Relación 1:N (ForeignKey)
     fundo = models.ForeignKey(
-        FundoProductor, 
-        on_delete=models.CASCADE, 
+        FundoProductor,
+        on_delete=models.CASCADE,
         related_name='lotes'
     )
     codigo_lote = models.CharField(max_length=50, unique=True)
@@ -53,7 +58,8 @@ class LoteRecepcionado(models.Model):
     def __str__(self):
         return f"{self.codigo_lote} - {self.fundo.nombre_fundo}"
 
-# Relación 1:1 (OneToOneField)
+
+# Relación 1:1
 class EvaluacionCalidadLote(models.Model):
     lote = models.OneToOneField(
         LoteRecepcionado,
@@ -67,6 +73,7 @@ class EvaluacionCalidadLote(models.Model):
 
     def __str__(self):
         return f"Evaluación {self.lote.codigo_lote}"
+
 
 # Tabla intermedia para la relación N:M
 class CertificacionLote(models.Model):
